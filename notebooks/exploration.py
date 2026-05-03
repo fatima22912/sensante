@@ -8,7 +8,7 @@ print("=" * 50)
 print("SENSANTE - Exploration du dataset")
 print("=" * 50)
 
-print(f"Nombre de patients : {len(df)}")
+print(f"Nombre de patients : {len(df)}") 
 print(f"Nombre de colonnes : {df.shape[1]}")
 print(f"Colonnes : {list(df.columns)}")
 
