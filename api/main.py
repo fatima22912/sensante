@@ -1,6 +1,9 @@
 # API FastAPI pour SenSante - Assistant pre-diagnostic medical
+from typing import List
+
 from pydantic import BaseModel, Field
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
 
 # Creer l'application
@@ -8,6 +11,13 @@ app = FastAPI(
     title="SenSante API",
     description="Assistant pre-diagnostic medical pour le Senegal",
     version="0.2.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Route de base : verifier que l'API fonctionne
@@ -19,7 +29,6 @@ def health_check():
         "status": "ok",
         "message": "SenSante API is running"
     }
-    from pydantic import BaseModel, Field
 
 # --- Schemas Pydantic ---
 
@@ -71,6 +80,26 @@ class DiagnosticOutput(BaseModel):
     message: str = Field(
         ..., description="Recommandation"
     )
+
+
+class ModelInfo(BaseModel):
+    """Informations sur le modele charge."""
+
+    model_type: str = Field(
+        ..., description="Type du modele"
+    )
+
+    n_estimators: int = Field(
+        ..., description="Nombre d'arbres dans le RandomForest"
+    )
+
+    classes: List[str] = Field(
+        ..., description="Classes possibles"
+    )
+
+    n_features: int = Field(
+        ..., description="Nombre de features"
+    )
     
 import numpy as np
 
@@ -89,6 +118,18 @@ feature_cols = joblib.load("models/feature_cols.pkl")
 print(f"Modele charge : {type(model).__name__}")
 
 print(f"Classes : {list(model.classes_)}")
+
+@app.get("/model-info", response_model=ModelInfo)
+def model_info():
+    """Retourne des informations sur le modele charge."""
+    return ModelInfo(
+        model_type=type(model).__name__,
+        n_estimators=getattr(model, "n_estimators", 0),
+        classes=list(model.classes_),
+        n_features=len(feature_cols)
+    )
+
+
 @app.post("/predict", response_model=DiagnosticOutput)
 def predict(patient: PatientInput):
     """
